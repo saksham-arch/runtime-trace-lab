@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "runtime-trace-lab"
+version = "0.1.0"
+description = "Validated runtime span analysis"
+requires-python = ">=3.9"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.scripts]
+runtime-trace-lab = "runtime_trace_lab.__main__:main"
+
