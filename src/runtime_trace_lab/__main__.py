@@ -3,7 +3,7 @@ from dataclasses import asdict
 import json
 from pathlib import Path
 
-from .spans import Span, analyze_spans
+from .spans import Span, analyze_spans, summarize_trace
 
 
 def load_spans(path: Path) -> list[Span]:
@@ -31,10 +31,17 @@ def load_spans(path: Path) -> list[Span]:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Analyze runtime span JSONL")
     parser.add_argument("path", type=Path)
+    parser.add_argument("--summary", action="store_true")
     args = parser.parse_args()
-    print(json.dumps([asdict(item) for item in analyze_spans(load_spans(args.path))], indent=2))
+    spans = load_spans(args.path)
+    timings = [asdict(item) for item in analyze_spans(spans)]
+    payload = (
+        {"trace": asdict(summarize_trace(spans)), "spans": timings}
+        if args.summary
+        else timings
+    )
+    print(json.dumps(payload, indent=2))
 
 
 if __name__ == "__main__":
     main()
-

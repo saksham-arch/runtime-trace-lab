@@ -28,6 +28,16 @@ class SpanTiming:
     exclusive_ns: int
 
 
+@dataclass(frozen=True)
+class TraceSummary:
+    span_count: int
+    root_count: int
+    start_ns: int
+    end_ns: int
+    wall_time_ns: int
+    root_covered_ns: int
+
+
 def _covered_duration(intervals: list[tuple[int, int]]) -> int:
     if not intervals:
         return 0
@@ -86,3 +96,23 @@ def analyze_spans(spans: Iterable[Span]) -> list[SpanTiming]:
             )
         )
     return sorted(results, key=lambda item: (-item.inclusive_ns, item.span_id))
+
+
+def summarize_trace(spans: Iterable[Span]) -> TraceSummary:
+    span_list = list(spans)
+    if not span_list:
+        raise ValueError("at least one span is required")
+    analyze_spans(span_list)  # Reuse relationship and containment validation.
+    roots = [span for span in span_list if span.parent_id is None]
+    start = min(span.start_ns for span in span_list)
+    end = max(span.end_ns for span in span_list)
+    return TraceSummary(
+        span_count=len(span_list),
+        root_count=len(roots),
+        start_ns=start,
+        end_ns=end,
+        wall_time_ns=end - start,
+        root_covered_ns=_covered_duration(
+            [(root.start_ns, root.end_ns) for root in roots]
+        ),
+    )

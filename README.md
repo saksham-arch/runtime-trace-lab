@@ -10,6 +10,7 @@ containment, then reports inclusive and exclusive duration for each span.
 
 ```bash
 PYTHONPATH=src python3 -m runtime_trace_lab trace.jsonl
+PYTHONPATH=src python3 -m runtime_trace_lab trace.jsonl --summary
 python3 -m unittest discover -s tests
 ```
 
@@ -17,3 +18,5 @@ Exclusive duration subtracts the union of direct-child intervals, so
 overlapping children are not double-counted. Timestamps must share one
 monotonic clock domain.
 
+Summary mode reports the trace envelope and the union of root-span coverage, so
+concurrent roots do not inflate observed wall time.

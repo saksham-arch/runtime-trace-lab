@@ -1,6 +1,6 @@
 import unittest
 
-from runtime_trace_lab import Span, analyze_spans
+from runtime_trace_lab import Span, analyze_spans, summarize_trace
 
 
 class SpanAnalysisTests(unittest.TestCase):
@@ -28,6 +28,19 @@ class SpanAnalysisTests(unittest.TestCase):
     def test_rejects_parent_cycle(self) -> None:
         with self.assertRaises(ValueError):
             analyze_spans([Span("a", "b", "one", 0, 1), Span("b", "a", "two", 0, 1)])
+
+    def test_summarizes_overlapping_root_coverage(self) -> None:
+        summary = summarize_trace(
+            [Span("a", None, "worker-a", 10, 50), Span("b", None, "worker-b", 40, 80)]
+        )
+        self.assertEqual(summary.span_count, 2)
+        self.assertEqual(summary.root_count, 2)
+        self.assertEqual(summary.wall_time_ns, 70)
+        self.assertEqual(summary.root_covered_ns, 70)
+
+    def test_rejects_empty_trace_summary(self) -> None:
+        with self.assertRaises(ValueError):
+            summarize_trace([])
 
 
 if __name__ == "__main__":
