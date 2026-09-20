@@ -1,6 +1,11 @@
 import unittest
 
-from runtime_trace_lab import Span, analyze_spans, summarize_trace
+from runtime_trace_lab import (
+    Span,
+    analyze_spans,
+    summarize_operations,
+    summarize_trace,
+)
 
 
 class SpanAnalysisTests(unittest.TestCase):
@@ -41,6 +46,28 @@ class SpanAnalysisTests(unittest.TestCase):
     def test_rejects_empty_trace_summary(self) -> None:
         with self.assertRaises(ValueError):
             summarize_trace([])
+
+    def test_summarizes_repeated_operations_by_exclusive_cost(self) -> None:
+        spans = [
+            Span("root", None, "request", 0, 100),
+            Span("db-1", "root", "database", 10, 30),
+            Span("db-2", "root", "database", 40, 70),
+            Span("cache", "root", "cache", 80, 90),
+        ]
+
+        database, request, cache = summarize_operations(spans)
+
+        self.assertEqual(database.name, "database")
+        self.assertEqual(database.span_count, 2)
+        self.assertEqual(database.total_inclusive_ns, 50)
+        self.assertEqual(database.median_inclusive_ns, 25)
+        self.assertEqual(database.total_exclusive_ns, 50)
+        self.assertEqual(request.name, "request")
+        self.assertEqual(request.total_exclusive_ns, 40)
+        self.assertEqual(cache.total_exclusive_ns, 10)
+
+    def test_empty_operation_summary_is_empty(self) -> None:
+        self.assertEqual(summarize_operations([]), [])
 
 
 if __name__ == "__main__":

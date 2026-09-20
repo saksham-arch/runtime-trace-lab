@@ -19,4 +19,8 @@ overlapping children are not double-counted. Timestamps must share one
 monotonic clock domain.
 
 Summary mode reports the trace envelope and the union of root-span coverage, so
-concurrent roots do not inflate observed wall time.
+concurrent roots do not inflate observed wall time. It also groups validated
+span timings by operation name, reporting counts plus total and median inclusive
+and exclusive duration. Totals can identify where the supplied trace spent
+time, but they are not a statistical claim about other runs. Inclusive totals
+can double-count nested work; exclusive totals subtract direct-child coverage.

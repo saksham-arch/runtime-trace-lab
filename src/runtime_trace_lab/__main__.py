@@ -3,7 +3,7 @@ from dataclasses import asdict
 import json
 from pathlib import Path
 
-from .spans import Span, analyze_spans, summarize_trace
+from .spans import Span, analyze_spans, summarize_operations, summarize_trace
 
 
 def load_spans(path: Path) -> list[Span]:
@@ -36,7 +36,11 @@ def main() -> None:
     spans = load_spans(args.path)
     timings = [asdict(item) for item in analyze_spans(spans)]
     payload = (
-        {"trace": asdict(summarize_trace(spans)), "spans": timings}
+        {
+            "trace": asdict(summarize_trace(spans)),
+            "operations": [asdict(item) for item in summarize_operations(spans)],
+            "spans": timings,
+        }
         if args.summary
         else timings
     )

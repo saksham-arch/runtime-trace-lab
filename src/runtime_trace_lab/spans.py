@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from statistics import median
 from typing import Iterable, Optional
 
 
@@ -36,6 +37,16 @@ class TraceSummary:
     end_ns: int
     wall_time_ns: int
     root_covered_ns: int
+
+
+@dataclass(frozen=True)
+class OperationSummary:
+    name: str
+    span_count: int
+    total_inclusive_ns: int
+    median_inclusive_ns: float
+    total_exclusive_ns: int
+    median_exclusive_ns: float
 
 
 def _covered_duration(intervals: list[tuple[int, int]]) -> int:
@@ -115,4 +126,30 @@ def summarize_trace(spans: Iterable[Span]) -> TraceSummary:
         root_covered_ns=_covered_duration(
             [(root.start_ns, root.end_ns) for root in roots]
         ),
+    )
+
+
+def summarize_operations(spans: Iterable[Span]) -> list[OperationSummary]:
+    """Aggregate validated span timings by operation name."""
+    grouped: dict[str, list[SpanTiming]] = {}
+    for timing in analyze_spans(spans):
+        grouped.setdefault(timing.name, []).append(timing)
+
+    summaries: list[OperationSummary] = []
+    for name, timings in grouped.items():
+        inclusive = [timing.inclusive_ns for timing in timings]
+        exclusive = [timing.exclusive_ns for timing in timings]
+        summaries.append(
+            OperationSummary(
+                name=name,
+                span_count=len(timings),
+                total_inclusive_ns=sum(inclusive),
+                median_inclusive_ns=median(inclusive),
+                total_exclusive_ns=sum(exclusive),
+                median_exclusive_ns=median(exclusive),
+            )
+        )
+    return sorted(
+        summaries,
+        key=lambda item: (-item.total_exclusive_ns, item.name),
     )
