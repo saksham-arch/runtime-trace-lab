@@ -42,6 +42,27 @@ class SpanAnalysisTests(unittest.TestCase):
         self.assertEqual(summary.root_count, 2)
         self.assertEqual(summary.wall_time_ns, 70)
         self.assertEqual(summary.root_covered_ns, 70)
+        self.assertEqual(summary.peak_concurrency, 2)
+
+    def test_peak_concurrency_includes_nested_and_overlapping_spans(self) -> None:
+        summary = summarize_trace(
+            [
+                Span("root", None, "request", 0, 100),
+                Span("a", "root", "database", 10, 50),
+                Span("b", "root", "cache", 40, 70),
+            ]
+        )
+        self.assertEqual(summary.peak_concurrency, 3)
+
+    def test_touching_and_zero_duration_spans_do_not_inflate_concurrency(self) -> None:
+        summary = summarize_trace(
+            [
+                Span("a", None, "worker-a", 0, 10),
+                Span("event", None, "marker", 5, 5),
+                Span("b", None, "worker-b", 10, 20),
+            ]
+        )
+        self.assertEqual(summary.peak_concurrency, 1)
 
     def test_rejects_empty_trace_summary(self) -> None:
         with self.assertRaises(ValueError):

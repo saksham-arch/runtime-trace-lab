@@ -18,9 +18,13 @@ Exclusive duration subtracts the union of direct-child intervals, so
 overlapping children are not double-counted. Timestamps must share one
 monotonic clock domain.
 
-Summary mode reports the trace envelope and the union of root-span coverage, so
-concurrent roots do not inflate observed wall time. It also groups validated
-span timings by operation name, reporting counts plus total and median inclusive
-and exclusive duration. Totals can identify where the supplied trace spent
-time, but they are not a statistical claim about other runs. Inclusive totals
-can double-count nested work; exclusive totals subtract direct-child coverage.
+Summary mode reports the trace envelope, the union of root-span coverage, and
+peak simultaneous spans. Spans ending exactly when another starts are not
+concurrent, and zero-duration spans do not raise the peak. This metric describes
+instrumented span overlap, not operating-system thread or CPU concurrency.
+
+Summary mode also groups validated span timings by operation name, reporting
+counts plus total and median inclusive and exclusive duration. Totals can
+identify where the supplied trace spent time, but they are not a statistical
+claim about other runs. Inclusive totals can double-count nested work;
+exclusive totals subtract direct-child coverage.

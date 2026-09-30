@@ -37,6 +37,7 @@ class TraceSummary:
     end_ns: int
     wall_time_ns: int
     root_covered_ns: int
+    peak_concurrency: int
 
 
 @dataclass(frozen=True)
@@ -62,6 +63,22 @@ def _covered_duration(intervals: list[tuple[int, int]]) -> int:
             total += current_end - current_start
             current_start, current_end = start, end
     return total + current_end - current_start
+
+
+def _peak_concurrency(intervals: list[tuple[int, int]]) -> int:
+    events: list[tuple[int, int]] = []
+    for start, end in intervals:
+        if start == end:
+            continue
+        events.append((start, 1))
+        events.append((end, -1))
+
+    active = 0
+    peak = 0
+    for _, change in sorted(events):
+        active += change
+        peak = max(peak, active)
+    return peak
 
 
 def analyze_spans(spans: Iterable[Span]) -> list[SpanTiming]:
@@ -125,6 +142,9 @@ def summarize_trace(spans: Iterable[Span]) -> TraceSummary:
         wall_time_ns=end - start,
         root_covered_ns=_covered_duration(
             [(root.start_ns, root.end_ns) for root in roots]
+        ),
+        peak_concurrency=_peak_concurrency(
+            [(span.start_ns, span.end_ns) for span in span_list]
         ),
     )
 
