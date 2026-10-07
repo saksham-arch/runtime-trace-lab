@@ -18,6 +18,8 @@ class SpanAnalysisTests(unittest.TestCase):
         timings = {item.span_id: item for item in analyze_spans(spans)}
         self.assertEqual(timings["root"].inclusive_ns, 100)
         self.assertEqual(timings["root"].exclusive_ns, 40)
+        self.assertEqual(timings["root"].depth, 0)
+        self.assertEqual(timings["a"].depth, 1)
         self.assertEqual(timings["a"].exclusive_ns, 40)
 
     def test_rejects_duplicate_or_missing_parent(self) -> None:
@@ -43,6 +45,21 @@ class SpanAnalysisTests(unittest.TestCase):
         self.assertEqual(summary.wall_time_ns, 70)
         self.assertEqual(summary.root_covered_ns, 70)
         self.assertEqual(summary.peak_concurrency, 2)
+        self.assertEqual(summary.maximum_depth, 0)
+
+    def test_reports_nested_span_depth_and_trace_maximum(self) -> None:
+        spans = [
+            Span("root", None, "request", 0, 100),
+            Span("child", "root", "controller", 10, 90),
+            Span("grandchild", "child", "database", 20, 50),
+        ]
+        timings = {item.span_id: item for item in analyze_spans(spans)}
+        summary = summarize_trace(spans)
+
+        self.assertEqual(timings["root"].depth, 0)
+        self.assertEqual(timings["child"].depth, 1)
+        self.assertEqual(timings["grandchild"].depth, 2)
+        self.assertEqual(summary.maximum_depth, 2)
 
     def test_peak_concurrency_includes_nested_and_overlapping_spans(self) -> None:
         summary = summarize_trace(

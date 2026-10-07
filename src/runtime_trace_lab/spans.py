@@ -25,6 +25,7 @@ class SpanTiming:
     span_id: str
     parent_id: Optional[str]
     name: str
+    depth: int
     inclusive_ns: int
     exclusive_ns: int
 
@@ -38,6 +39,7 @@ class TraceSummary:
     wall_time_ns: int
     root_covered_ns: int
     peak_concurrency: int
+    maximum_depth: int
 
 
 @dataclass(frozen=True)
@@ -81,6 +83,15 @@ def _peak_concurrency(intervals: list[tuple[int, int]]) -> int:
     return peak
 
 
+def _span_depth(span: Span, indexed: dict[str, Span]) -> int:
+    depth = 0
+    parent_id = span.parent_id
+    while parent_id is not None:
+        depth += 1
+        parent_id = indexed[parent_id].parent_id
+    return depth
+
+
 def analyze_spans(spans: Iterable[Span]) -> list[SpanTiming]:
     span_list = list(spans)
     indexed = {span.span_id: span for span in span_list}
@@ -119,6 +130,7 @@ def analyze_spans(spans: Iterable[Span]) -> list[SpanTiming]:
                 span.span_id,
                 span.parent_id,
                 span.name,
+                _span_depth(span, indexed),
                 inclusive,
                 inclusive - _covered_duration(child_intervals),
             )
@@ -130,7 +142,8 @@ def summarize_trace(spans: Iterable[Span]) -> TraceSummary:
     span_list = list(spans)
     if not span_list:
         raise ValueError("at least one span is required")
-    analyze_spans(span_list)  # Reuse relationship and containment validation.
+    # Reuse relationship and containment validation before summarizing.
+    timings = analyze_spans(span_list)
     roots = [span for span in span_list if span.parent_id is None]
     start = min(span.start_ns for span in span_list)
     end = max(span.end_ns for span in span_list)
@@ -146,6 +159,7 @@ def summarize_trace(spans: Iterable[Span]) -> TraceSummary:
         peak_concurrency=_peak_concurrency(
             [(span.start_ns, span.end_ns) for span in span_list]
         ),
+        maximum_depth=max(timing.depth for timing in timings),
     )
 
 
