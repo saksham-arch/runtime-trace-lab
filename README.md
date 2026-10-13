@@ -20,9 +20,13 @@ monotonic clock domain. Each analyzed span includes its zero-based parent depth:
 roots are depth 0, their children are depth 1, and so on.
 
 Summary mode reports the trace envelope, the union of root-span coverage, and
-peak simultaneous spans. Spans ending exactly when another starts are not
-concurrent, and zero-duration spans do not raise the peak. This metric describes
-instrumented span overlap, not operating-system thread or CPU concurrency.
+peak simultaneous spans. `root_coverage_ratio` divides root coverage by the
+trace envelope, making gaps between root spans visible; it is `null` for a
+zero-duration trace. A gap can reflect missing instrumentation or intentional
+idle time, so coverage is not a completeness score. Spans ending exactly when
+another starts are not concurrent, and zero-duration spans do not raise the
+peak. This metric describes instrumented span overlap, not operating-system
+thread or CPU concurrency.
 The trace summary also reports maximum nesting depth. Depth describes emitted
 parent relationships; it is not a call-stack sample or a measure of complexity.
 

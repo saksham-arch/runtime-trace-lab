@@ -44,6 +44,7 @@ class SpanAnalysisTests(unittest.TestCase):
         self.assertEqual(summary.root_count, 2)
         self.assertEqual(summary.wall_time_ns, 70)
         self.assertEqual(summary.root_covered_ns, 70)
+        self.assertEqual(summary.root_coverage_ratio, 1.0)
         self.assertEqual(summary.peak_concurrency, 2)
         self.assertEqual(summary.maximum_depth, 0)
 
@@ -60,6 +61,24 @@ class SpanAnalysisTests(unittest.TestCase):
         self.assertEqual(timings["child"].depth, 1)
         self.assertEqual(timings["grandchild"].depth, 2)
         self.assertEqual(summary.maximum_depth, 2)
+
+    def test_reports_gaps_between_root_spans(self) -> None:
+        summary = summarize_trace(
+            [
+                Span("a", None, "worker-a", 0, 20),
+                Span("b", None, "worker-b", 40, 50),
+            ]
+        )
+
+        self.assertEqual(summary.wall_time_ns, 50)
+        self.assertEqual(summary.root_covered_ns, 30)
+        self.assertEqual(summary.root_coverage_ratio, 0.6)
+
+    def test_zero_duration_trace_has_undefined_root_coverage_ratio(self) -> None:
+        summary = summarize_trace([Span("event", None, "marker", 5, 5)])
+        self.assertEqual(summary.wall_time_ns, 0)
+        self.assertEqual(summary.root_covered_ns, 0)
+        self.assertIsNone(summary.root_coverage_ratio)
 
     def test_peak_concurrency_includes_nested_and_overlapping_spans(self) -> None:
         summary = summarize_trace(

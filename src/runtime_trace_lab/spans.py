@@ -38,6 +38,7 @@ class TraceSummary:
     end_ns: int
     wall_time_ns: int
     root_covered_ns: int
+    root_coverage_ratio: Optional[float]
     peak_concurrency: int
     maximum_depth: int
 
@@ -147,15 +148,18 @@ def summarize_trace(spans: Iterable[Span]) -> TraceSummary:
     roots = [span for span in span_list if span.parent_id is None]
     start = min(span.start_ns for span in span_list)
     end = max(span.end_ns for span in span_list)
+    wall_time = end - start
+    root_covered = _covered_duration(
+        [(root.start_ns, root.end_ns) for root in roots]
+    )
     return TraceSummary(
         span_count=len(span_list),
         root_count=len(roots),
         start_ns=start,
         end_ns=end,
-        wall_time_ns=end - start,
-        root_covered_ns=_covered_duration(
-            [(root.start_ns, root.end_ns) for root in roots]
-        ),
+        wall_time_ns=wall_time,
+        root_covered_ns=root_covered,
+        root_coverage_ratio=(root_covered / wall_time if wall_time > 0 else None),
         peak_concurrency=_peak_concurrency(
             [(span.start_ns, span.end_ns) for span in span_list]
         ),
