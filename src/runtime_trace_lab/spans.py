@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from math import ceil
 from statistics import median
 from typing import Iterable, Optional
 
@@ -49,8 +50,10 @@ class OperationSummary:
     span_count: int
     total_inclusive_ns: int
     median_inclusive_ns: float
+    p95_inclusive_ns: int
     total_exclusive_ns: int
     median_exclusive_ns: float
+    p95_exclusive_ns: int
 
 
 def _covered_duration(intervals: list[tuple[int, int]]) -> int:
@@ -91,6 +94,11 @@ def _span_depth(span: Span, indexed: dict[str, Span]) -> int:
         depth += 1
         parent_id = indexed[parent_id].parent_id
     return depth
+
+
+def _nearest_rank_p95(values: list[int]) -> int:
+    ordered = sorted(values)
+    return ordered[ceil(0.95 * len(ordered)) - 1]
 
 
 def analyze_spans(spans: Iterable[Span]) -> list[SpanTiming]:
@@ -183,8 +191,10 @@ def summarize_operations(spans: Iterable[Span]) -> list[OperationSummary]:
                 span_count=len(timings),
                 total_inclusive_ns=sum(inclusive),
                 median_inclusive_ns=median(inclusive),
+                p95_inclusive_ns=_nearest_rank_p95(inclusive),
                 total_exclusive_ns=sum(exclusive),
                 median_exclusive_ns=median(exclusive),
+                p95_exclusive_ns=_nearest_rank_p95(exclusive),
             )
         )
     return sorted(

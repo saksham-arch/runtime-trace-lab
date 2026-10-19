@@ -31,7 +31,9 @@ The trace summary also reports maximum nesting depth. Depth describes emitted
 parent relationships; it is not a call-stack sample or a measure of complexity.
 
 Summary mode also groups validated span timings by operation name, reporting
-counts plus total and median inclusive and exclusive duration. Totals can
-identify where the supplied trace spent time, but they are not a statistical
-claim about other runs. Inclusive totals can double-count nested work;
-exclusive totals subtract direct-child coverage.
+counts plus total, median, and nearest-rank p95 inclusive and exclusive
+duration. P95 exposes slower observed spans but is coarse for small groups and
+does not predict unobserved requests. Totals can identify where the supplied
+trace spent time, but they are not a statistical claim about other runs.
+Inclusive totals can double-count nested work; exclusive totals subtract
+direct-child coverage.

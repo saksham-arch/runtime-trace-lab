@@ -118,10 +118,25 @@ class SpanAnalysisTests(unittest.TestCase):
         self.assertEqual(database.span_count, 2)
         self.assertEqual(database.total_inclusive_ns, 50)
         self.assertEqual(database.median_inclusive_ns, 25)
+        self.assertEqual(database.p95_inclusive_ns, 30)
         self.assertEqual(database.total_exclusive_ns, 50)
+        self.assertEqual(database.p95_exclusive_ns, 30)
         self.assertEqual(request.name, "request")
         self.assertEqual(request.total_exclusive_ns, 40)
+        self.assertEqual(request.p95_inclusive_ns, 100)
+        self.assertEqual(request.p95_exclusive_ns, 40)
         self.assertEqual(cache.total_exclusive_ns, 10)
+
+    def test_operation_p95_uses_nearest_rank(self) -> None:
+        spans = [
+            Span(str(index), None, "work", index * 100, index * 100 + index)
+            for index in range(1, 21)
+        ]
+
+        summary = summarize_operations(spans)[0]
+
+        self.assertEqual(summary.p95_inclusive_ns, 19)
+        self.assertEqual(summary.p95_exclusive_ns, 19)
 
     def test_empty_operation_summary_is_empty(self) -> None:
         self.assertEqual(summarize_operations([]), [])
