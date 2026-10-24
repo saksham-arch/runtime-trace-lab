@@ -11,7 +11,7 @@ containment, then reports inclusive and exclusive duration for each span.
 ```bash
 PYTHONPATH=src python3 -m runtime_trace_lab trace.jsonl
 PYTHONPATH=src python3 -m runtime_trace_lab trace.jsonl --summary
-python3 -m unittest discover -s tests
+PYTHONPATH=src python3 -m unittest discover -s tests
 ```
 
 Exclusive duration subtracts the union of direct-child intervals, so
@@ -37,3 +37,9 @@ does not predict unobserved requests. Totals can identify where the supplied
 trace spent time, but they are not a statistical claim about other runs.
 Inclusive totals can double-count nested work; exclusive totals subtract
 direct-child coverage.
+Each operation also reports its share of the total exclusive duration across
+all validated spans in the supplied trace. Shares sum to one when any exclusive
+duration exists and are `null` for an all-zero-duration trace. This is a
+composition of emitted spans, not CPU utilization or a claim about untraced
+work; overlapping branches can also accumulate more exclusive duration than
+wall-clock time.

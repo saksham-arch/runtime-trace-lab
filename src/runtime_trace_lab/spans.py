@@ -52,6 +52,7 @@ class OperationSummary:
     median_inclusive_ns: float
     p95_inclusive_ns: int
     total_exclusive_ns: int
+    exclusive_share_of_total: Optional[float]
     median_exclusive_ns: float
     p95_exclusive_ns: int
 
@@ -177,22 +178,29 @@ def summarize_trace(spans: Iterable[Span]) -> TraceSummary:
 
 def summarize_operations(spans: Iterable[Span]) -> list[OperationSummary]:
     """Aggregate validated span timings by operation name."""
+    analyzed = analyze_spans(spans)
     grouped: dict[str, list[SpanTiming]] = {}
-    for timing in analyze_spans(spans):
+    for timing in analyzed:
         grouped.setdefault(timing.name, []).append(timing)
+    total_exclusive_ns = sum(timing.exclusive_ns for timing in analyzed)
 
     summaries: list[OperationSummary] = []
-    for name, timings in grouped.items():
-        inclusive = [timing.inclusive_ns for timing in timings]
-        exclusive = [timing.exclusive_ns for timing in timings]
+    for name, operation_timings in grouped.items():
+        inclusive = [timing.inclusive_ns for timing in operation_timings]
+        exclusive = [timing.exclusive_ns for timing in operation_timings]
         summaries.append(
             OperationSummary(
                 name=name,
-                span_count=len(timings),
+                span_count=len(operation_timings),
                 total_inclusive_ns=sum(inclusive),
                 median_inclusive_ns=median(inclusive),
                 p95_inclusive_ns=_nearest_rank_p95(inclusive),
                 total_exclusive_ns=sum(exclusive),
+                exclusive_share_of_total=(
+                    sum(exclusive) / total_exclusive_ns
+                    if total_exclusive_ns > 0
+                    else None
+                ),
                 median_exclusive_ns=median(exclusive),
                 p95_exclusive_ns=_nearest_rank_p95(exclusive),
             )

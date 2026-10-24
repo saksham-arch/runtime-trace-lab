@@ -120,12 +120,15 @@ class SpanAnalysisTests(unittest.TestCase):
         self.assertEqual(database.median_inclusive_ns, 25)
         self.assertEqual(database.p95_inclusive_ns, 30)
         self.assertEqual(database.total_exclusive_ns, 50)
+        self.assertEqual(database.exclusive_share_of_total, 0.5)
         self.assertEqual(database.p95_exclusive_ns, 30)
         self.assertEqual(request.name, "request")
         self.assertEqual(request.total_exclusive_ns, 40)
+        self.assertEqual(request.exclusive_share_of_total, 0.4)
         self.assertEqual(request.p95_inclusive_ns, 100)
         self.assertEqual(request.p95_exclusive_ns, 40)
         self.assertEqual(cache.total_exclusive_ns, 10)
+        self.assertEqual(cache.exclusive_share_of_total, 0.1)
 
     def test_operation_p95_uses_nearest_rank(self) -> None:
         spans = [
@@ -140,6 +143,13 @@ class SpanAnalysisTests(unittest.TestCase):
 
     def test_empty_operation_summary_is_empty(self) -> None:
         self.assertEqual(summarize_operations([]), [])
+
+    def test_zero_duration_operations_have_no_exclusive_share(self) -> None:
+        summary = summarize_operations(
+            [Span("event", None, "marker", 5, 5)]
+        )[0]
+
+        self.assertIsNone(summary.exclusive_share_of_total)
 
 
 if __name__ == "__main__":
