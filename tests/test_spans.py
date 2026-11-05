@@ -72,7 +72,18 @@ class SpanAnalysisTests(unittest.TestCase):
 
         self.assertEqual(summary.wall_time_ns, 50)
         self.assertEqual(summary.root_covered_ns, 30)
+        self.assertEqual(summary.largest_root_gap_ns, 20)
         self.assertEqual(summary.root_coverage_ratio, 0.6)
+
+    def test_largest_root_gap_merges_overlapping_roots(self) -> None:
+        summary = summarize_trace(
+            [
+                Span("a", None, "worker", 0, 20),
+                Span("b", None, "worker", 10, 30),
+                Span("c", None, "worker", 45, 50),
+            ]
+        )
+        self.assertEqual(summary.largest_root_gap_ns, 15)
 
     def test_zero_duration_trace_has_undefined_root_coverage_ratio(self) -> None:
         summary = summarize_trace([Span("event", None, "marker", 5, 5)])

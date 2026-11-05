@@ -27,6 +27,11 @@ idle time, so coverage is not a completeness score. Spans ending exactly when
 another starts are not concurrent, and zero-duration spans do not raise the
 peak. This metric describes instrumented span overlap, not operating-system
 thread or CPU concurrency.
+
+`largest_root_gap_ns` reports the widest interval between root-span coverage
+islands after overlapping roots are merged. It is zero when coverage is
+continuous; the gap can still represent intentional idle time.
+
 The trace summary also reports maximum nesting depth. Depth describes emitted
 parent relationships; it is not a call-stack sample or a measure of complexity.
 

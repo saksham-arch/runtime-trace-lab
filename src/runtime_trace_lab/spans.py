@@ -39,6 +39,7 @@ class TraceSummary:
     end_ns: int
     wall_time_ns: int
     root_covered_ns: int
+    largest_root_gap_ns: int
     root_coverage_ratio: Optional[float]
     peak_concurrency: int
     maximum_depth: int
@@ -70,6 +71,17 @@ def _covered_duration(intervals: list[tuple[int, int]]) -> int:
             total += current_end - current_start
             current_start, current_end = start, end
     return total + current_end - current_start
+
+
+def _largest_gap(intervals: list[tuple[int, int]]) -> int:
+    """Find the widest uncovered interval between overlapping root spans."""
+    ordered = sorted(intervals)
+    largest = 0
+    current_end = ordered[0][1]
+    for start, end in ordered[1:]:
+        largest = max(largest, start - current_end)
+        current_end = max(current_end, end)
+    return largest
 
 
 def _peak_concurrency(intervals: list[tuple[int, int]]) -> int:
@@ -158,9 +170,8 @@ def summarize_trace(spans: Iterable[Span]) -> TraceSummary:
     start = min(span.start_ns for span in span_list)
     end = max(span.end_ns for span in span_list)
     wall_time = end - start
-    root_covered = _covered_duration(
-        [(root.start_ns, root.end_ns) for root in roots]
-    )
+    root_intervals = [(root.start_ns, root.end_ns) for root in roots]
+    root_covered = _covered_duration(root_intervals)
     return TraceSummary(
         span_count=len(span_list),
         root_count=len(roots),
@@ -168,6 +179,7 @@ def summarize_trace(spans: Iterable[Span]) -> TraceSummary:
         end_ns=end,
         wall_time_ns=wall_time,
         root_covered_ns=root_covered,
+        largest_root_gap_ns=_largest_gap(root_intervals),
         root_coverage_ratio=(root_covered / wall_time if wall_time > 0 else None),
         peak_concurrency=_peak_concurrency(
             [(span.start_ns, span.end_ns) for span in span_list]
