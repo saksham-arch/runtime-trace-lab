@@ -1,4 +1,8 @@
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+from runtime_trace_lab.__main__ import load_spans
 
 from runtime_trace_lab import (
     Span,
@@ -9,6 +13,22 @@ from runtime_trace_lab import (
 
 
 class SpanAnalysisTests(unittest.TestCase):
+    def test_jsonl_loader_rejects_coerced_identifiers_and_timestamps(self) -> None:
+        invalid_lines = [
+            '{"span_id":1,"name":"work","start_ns":0,"end_ns":1}',
+            '{"span_id":"a","parent_id":1,"name":"work","start_ns":0,"end_ns":1}',
+            '{"span_id":"a","name":"work","start_ns":0.5,"end_ns":1}',
+            '{"span_id":"a","name":"work","start_ns":true,"end_ns":1}',
+            '["a", "work", 0, 1]',
+        ]
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "trace.jsonl"
+            for line in invalid_lines:
+                with self.subTest(line=line):
+                    path.write_text(line + "\n", encoding="utf-8")
+                    with self.assertRaisesRegex(ValueError, "invalid span on line 1"):
+                        load_spans(path)
+
     def test_calculates_exclusive_time_without_double_counting_overlap(self) -> None:
         spans = [
             Span("root", None, "request", 0, 100),

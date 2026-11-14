@@ -14,13 +14,21 @@ def load_spans(path: Path) -> list[Span]:
                 continue
             try:
                 item = json.loads(line)
+                if not isinstance(item, dict):
+                    raise ValueError("span must be a JSON object")
+                if not isinstance(item.get("span_id"), str) or not isinstance(item.get("name"), str):
+                    raise ValueError("span_id and name must be strings")
+                if item.get("parent_id") is not None and not isinstance(item["parent_id"], str):
+                    raise ValueError("parent_id must be a string or null")
+                if type(item.get("start_ns")) is not int or type(item.get("end_ns")) is not int:
+                    raise ValueError("timestamps must be integer nanoseconds")
                 spans.append(
                     Span(
-                        span_id=str(item["span_id"]),
-                        parent_id=None if item.get("parent_id") is None else str(item["parent_id"]),
-                        name=str(item["name"]),
-                        start_ns=int(item["start_ns"]),
-                        end_ns=int(item["end_ns"]),
+                        span_id=item["span_id"],
+                        parent_id=item.get("parent_id"),
+                        name=item["name"],
+                        start_ns=item["start_ns"],
+                        end_ns=item["end_ns"],
                     )
                 )
             except (KeyError, TypeError, ValueError, json.JSONDecodeError) as error:

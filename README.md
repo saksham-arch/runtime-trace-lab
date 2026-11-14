@@ -18,6 +18,9 @@ Exclusive duration subtracts the union of direct-child intervals, so
 overlapping children are not double-counted. Timestamps must share one
 monotonic clock domain. Each analyzed span includes its zero-based parent depth:
 roots are depth 0, their children are depth 1, and so on.
+The JSON Lines loader requires string identifiers and names, a string or null
+parent, and integer nanosecond timestamps. It rejects fractional numbers,
+booleans, and numeric strings instead of silently converting them.
 
 Summary mode reports the trace envelope, the union of root-span coverage, and
 peak simultaneous spans. `root_coverage_ratio` divides root coverage by the
