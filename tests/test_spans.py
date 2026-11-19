@@ -13,6 +13,16 @@ from runtime_trace_lab import (
 
 
 class SpanAnalysisTests(unittest.TestCase):
+    def test_jsonl_loader_rejects_duplicate_fields(self) -> None:
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "trace.jsonl"
+            path.write_text(
+                '{"span_id":"a","span_id":"b","name":"work","start_ns":0,"end_ns":1}\n',
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "duplicate field 'span_id'"):
+                load_spans(path)
+
     def test_jsonl_loader_rejects_coerced_identifiers_and_timestamps(self) -> None:
         invalid_lines = [
             '{"span_id":1,"name":"work","start_ns":0,"end_ns":1}',

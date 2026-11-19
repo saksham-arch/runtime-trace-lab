@@ -6,6 +6,15 @@ from pathlib import Path
 from .spans import Span, analyze_spans, summarize_operations, summarize_trace
 
 
+def _unique_fields(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    item: dict[str, object] = {}
+    for key, value in pairs:
+        if key in item:
+            raise ValueError(f"duplicate field {key!r}")
+        item[key] = value
+    return item
+
+
 def load_spans(path: Path) -> list[Span]:
     spans: list[Span] = []
     with path.open(encoding="utf-8") as source:
@@ -13,7 +22,7 @@ def load_spans(path: Path) -> list[Span]:
             if not line.strip():
                 continue
             try:
-                item = json.loads(line)
+                item = json.loads(line, object_pairs_hook=_unique_fields)
                 if not isinstance(item, dict):
                     raise ValueError("span must be a JSON object")
                 if not isinstance(item.get("span_id"), str) or not isinstance(item.get("name"), str):

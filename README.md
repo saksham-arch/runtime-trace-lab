@@ -21,6 +21,8 @@ roots are depth 0, their children are depth 1, and so on.
 The JSON Lines loader requires string identifiers and names, a string or null
 parent, and integer nanosecond timestamps. It rejects fractional numbers,
 booleans, and numeric strings instead of silently converting them.
+Duplicate JSON keys are rejected, since silently taking the last value can
+change a span's identity or timing.
 
 Summary mode reports the trace envelope, the union of root-span coverage, and
 peak simultaneous spans. `root_coverage_ratio` divides root coverage by the
